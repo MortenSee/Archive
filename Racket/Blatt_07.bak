@@ -1,0 +1,149 @@
+#lang racket
+(require racket/trace 2htdp/image math/array)
+#|Zählen
+Definieren Sie eine Funktion zaehlen, die einen Wert x sowie eine Liste
+von Werten xs als Argumente annimmt und ermittelt, wie oft der Wert in
+der Liste vorkommt.
+
+Programmieren sie diese als
+-Allgemeine rekursive funktion
+-endrekurisve funktion
+-mittels geeigneter funktion höherer Ordnung
+|#
+;Allgemeine reukrsion
+(define (reCount x xs)
+  (if (= 0 (length xs)) 0
+       (+ (if (= x (car xs)) 1 0) (reCount x (cdr xs)))))
+;(trace reCount)
+
+;Endrekursive Funktion -- Wrapper
+(define (endCount x xs)
+  (count x xs 0))
+
+;Die aufgerufene Endrekursive Funktion
+(define (count x xs akk)
+  (if (= (length xs) 0) akk
+      (count x (cdr xs) (+ (if (= x (car xs)) 1 0) akk))))
+;(trace count)
+
+;Mit Funktion Höherer Ordnung
+;Mittels filter und dem gleichheitsprädikat auf liste des gesuchten elements reduziert, dessen länge dann gezählt.
+(define (hoCount x xs)
+  (length (filter (lambda (a) (= x a)) xs)))
+;(trace hoCount)
+
+#|
+;Bsp:
+(reCount 2 '(1 2 2 3 5 2 1 7 19 21))
+;>3
+(reCount 6 '(1 2 2 3 5 2 1 7 19 21))
+;>0
+
+(endCount 2 '(2 1 4 5 15 17 62 1 2 3 4 2))
+;>3
+(endCount 15 '(2 1 4 5 15 17 51 1 5 62 1 2 3 4 2))
+;>1
+
+(hoCount 2 '(2 1 4 5 6 7 12 14 19 2))
+;>2
+(hoCount 1 '(2 1 4 5 6 7 12 14 19 1 1 1 11 2))
+;>4
+|#
+
+#| Game of Life
+Regeln:
+Eine Zelle ist entweder:
+-Am Leben -> Schwarz ausgefüllt
+-Tot -> Weiß ausgefüllt mit schwrzem Rand
+
+Im nächsten schritt sind all jene Zellen am Leben die:
+-Am leben sind UND (= 2 lebende-nachbarn) haben
+-Tot sind UND (= 3 lebende-nachbarn) haben
+Alle restlichen Zellen sind demnach tot.
+
+Notizen: Nachbarn
+x x x                                                           {(i-1,j-1),(i,j-1),(i+1,j-1)}
+x A x  Alle x sind Nachbar von A als indize also (A = (i,j)) M= {(i-1,j)  ,-------,(i+1,j)  }
+x x x                                                           {(i-1,j+1),(i,j+1),(i+1,j+1)}
+
+
+Datenstruktur: Array --oder listen? structs? IDK yet.
+
+
+Vorgehen:
+Wir starten mit random besetzung des arrays/2dVektor von 0-en und 1en
+wir füllen eine neue matrix mit den werten für den n+1en schritt und stellen diesen dar.
+wir füllen die ursprüngliche matrix mit den werten für den n+2en schritt und stellen diese dar usw...
+
+|#
+
+#|Datenstruktur des Spielfelds: Liste von Listen (Liste von Reihen)
+Das Spielfeld besteht aus N reihen, jede Reihe besteht aus N Einträgen von entweder 0 oder 1.
+eine Reihe ist eine Liste von N vielen 0en oder 1en
+ein  Spielfeld ist eine Liste von N vielen Reihen
+
+ -- Funktionen --
+hoCount -- Die Funktion von oben um aus der Liste der nachbarn die anzahl der lebendigen zu zählen.
+neighbors (x,y) -- eine Funktion die die Liste der Nachbarn von zelle (x,y) erstellt |x=col ; y=row| (0,0) urpsrung oben links)
+|#
+
+;Zum filtern der Reihen-listen nach den gewünschten Nachbarschafts-indizes
+;Gibt die teilliste von [a,b-1] zurück
+
+(define (baue-reihe n)
+      (build-list n (lambda (x) (random 2))))
+
+(define *spielfeld* (list
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)
+                     (baue-reihe 30)))
+(define *spielfeld-dim* 30)
+(define *xs* (make-list 30 1))
+
+(define (zwischen a b xs)
+  (cond
+    [(< a b)(list-tail (take xs b) a)]
+    [()
+
+(define (neighbors x y grid grid-dim)
+  (flatten (list
+            (zwischen (modulo (+ x -1 grid-dim) grid-dim) ;x startwert
+                      (modulo (+ x 2 grid-dim) grid-dim)  ;x endwert
+                      (list-ref grid (modulo (+ y -1 grid-dim) grid-dim))) ;Die reihe über der eigenen
+            (zwischen (modulo (+ x -1 grid-dim) grid-dim)
+                      (modulo (+ x 2 grid-dim) grid-dim)
+                      (list-ref grid (modulo (+ y 0 grid-dim) grid-dim)))
+            (zwischen (modulo (+ x -1 grid-dim) grid-dim)
+                      (modulo (+ x 2 grid-dim) grid-dim)
+                      (list-ref grid (modulo (+ y 1 grid-dim) grid-dim))))))
+
+(define (countAliveNeighbors x y)
+  (hoCount 1 (remove (list-ref (list-ref *spielfeld* y)x) (neighbors x y *spielfeld* *spielfeld-dim*))))
+    

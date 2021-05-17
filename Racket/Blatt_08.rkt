@@ -1,0 +1,197 @@
+#lang racket
+;;;Blatt 08
+
+#|Aufgabe 1 - Funktionen höherer Ordnung und Closures
+
+--1.) Wann ist eine racket Funktion eine Funktion höherer Ordnung?
+
+Eine Funktion ist eine funktion höherer Ordnung sobald sie entweder:
+-Eine Funktion als Parameter erhählt oder,
+-Eine Funktion als Ergebenis liefert.
+
+--2.) Welche der folgenden Funktionen sind Funktionen höherer Ordnung und warum?
+
+a.)
+
+(define (gerade-oder-ungerade x)
+  (if (integer? x) (if (odd? x) 'gerade
+                                'ungerade)
+      'keinInteger))
+
+-- Keine Funktion höherer Ordnung da sie keiner der beiden Kriterien entspricht.
+
+b.)
+
+ map
+
+-- Map ist eine Funktion höherer Ordung da sie stets eine andere Funktion als ersten Paramter benötigt.
+
+c.)
+
+(define (erstelle-assoziationsliste xs ys)
+ (map cons xs ys))
+
+-- Kein Funktion höherer Ordung da die Funktion selbst keine andere Funktion als Parameter erhält und
+  ihr Ergebenis nur eine Liste ist, keine neue Funktion.
+
+d.)
+
+(define (ermittle-vergleichsoperations x y)
+ (cond [(< x y) <]
+       [(> x y) >]
+       [(= x y) =]))
+
+-- Ist eine Funktion höherer Ordnung, da sie eine Funktion, in diesem Fall einen der drei prädikate "<", ">" oder "=" als Ergebnis hat.
+
+e.)
+
+(define (schweinchen-in-der-mitte f arg1)
+ (lambda (arg2 arg3) (f arg2 arg1 arg3)))
+
+-- Ist eine Funktion höherer Ordnung da sie eine Funktion "f" übergeben bekommt.
+
+--3.)
+
+--4.)
+
+(foldl (curry + 2) 3 '(3 4 5))
+
+-evaluiert zu 21, da auf jedes Element der Liste (curry + 2) angewendet wird welches dazu führt das zu jedem Element 2 und (curry + 2) des nächsten Elements addiert wird.
+
+(map gerade-oder-ungerade '(4 587 74 69 969 97 459 4))
+
+-evaluiert zu (ungerade gerade ungerade gerade gerade gerade gerade ungerade)da bei der funktion falls odd? zutrifft 'gerade ausgegeben wird und nicht ungerade.
+
+(filter number? '((ab) () 1 (()) 4 -7 "a")
+
+-evaluiert zu '(1 4 -7), da alles andere das prädikat number? nicht erfüllen.
+
+(compose (curry foldl + 0) (curry filter (curryr < 0))) '(5682 48 24915 -45 -6 48))
+
+-evaluiert zu -51, da durch compose als erstes auf die liste (filter (curryr < 0)) angewendet wird, welches lediglich noch '(-45 -6) nachlässt.
+-auf diese Liste wird dann (curry foldl + 0) angewandt welches die Elemente zueinander addiert nach dem zu diesem jeweils 0 addiert wird.
+
+|#
+
+
+#|Aufgabe 2 - Einfache Funktionale Ausdrücke höherer Ordnung
+
+--Gegeben sei eine Liste xs von ganzen Zahlen
+-Geben sie einen Ausdruck an der:
+
+1.) Die Liste der Quadrierungen aller Zahlen in xs berechnet
+2.) Die Teilliste aller glatt durch 11 oder 9 teilbaren Zahlen von xs konstruiert
+3.) Die Summe der ungerade Zahlen größer als 6 in xs ermittelt
+4.) Der anhand eines gegebenen Prädikats xs in zwei Teillisten aufteilt
+|#
+
+; -- 1
+(define (squareMyList xs)
+  (map sqr xs))
+
+(squareMyList (range 11))
+;> '(1 4 9 16 25)
+
+; -- 2
+(define (durch9oder11Teilbar xs)
+  (filter (lambda (x) (or (= (modulo x 11) 0) (= (modulo x 9) 0))) xs))
+
+(durch9oder11Teilbar (range 100))
+;> '(0 9 11 18 22 27 33 36 44 45 54 55 63 66 72 77 81 88 90 99)
+
+; -- 3
+(define (sumGreater6 xs)
+  (apply + (filter (lambda (x)(< 6 x)) xs)))
+
+; -- 4
+(define (splitAcordingTo pred? xs)
+  (list (filter pred? xs) (filter-not pred? xs)))
+
+;Teilt in eine Gerade und Ungerade liste auf
+(splitAcordingTo odd? (range 51))
+
+;Teilt nach prädikat aus Funktion 1 in Liste von durch 9 oder 11 teilbaren Zahlen und jene die es nicht sind auf.
+(splitAcordingTo (lambda (x) (or (= (modulo x 11) 0) (= (modulo x 9) 0))) (range 51))
+
+;Teilt mit hilfe des Mathe-moduls "Zahlentheorie" in die Liste der Primzahlen und der nicht-prim Zahlen
+ (require math/number-theory)
+(splitAcordingTo prime? (range 51))
+
+
+#|Aufgabe 3
+
+
+|#
+(require se3-bib/setkarten-module)
+
+(define *number*  '(1 2 3))
+(define *pattern* '(waves oval rectangle))
+(define *mode*    '(outline solid hatched))
+(define *color*   '(red green blue))
+(define *spielkarten* (cartesian-product *number* *pattern* *mode* *color*))
+
+
+;Die Funktion die mit card-lst, also einer Karte welche als Liste ihrer Attribute dargestellt ist, die funktion aus der SE3-bib aufruft
+;und die Argumente in der richtigen Reihenfolge angibt.
+(define (show-card card-lst)
+  (show-set-card (first card-lst) (second card-lst) (third card-lst) (fourth card-lst)))
+
+
+;Die Funktion welche 3 Listen von Listen erhält (also 3 Karten), und dann den Attributen entsprechend trennt und duplikate entfernt.
+;Bsp:
+; '(1 waves solid red)
+; '(3 oval solid red)      => (map remove-duplicates '((1 3 2 1) (waves oval rectangle waves) (solid solid solid hatched) (red red red red)) => '((1 3 2) (waves oval rectangle) (solid hatched) (red))
+; '(2 rectangle solid red)
+; '(1 waves hatched red)
+(define (AttributelistsWithoutDuplicates as bs cs)
+  (map remove-duplicates (map list as bs cs)))
+
+
+;Wrapper Funktion zum aufrufen mit einer Liste von Karten
+(define (is-a-set? lstOfCards)
+  (check-if-set (AttributelistsWithoutDuplicates (first lstOfCards) (second lstOfCards) (third lstOfCards))))
+
+
+;Die Funktion die überprüft ob ein Set möglich ist.
+;Ein Set ist möglich wenn bei allen Karten entweder jedes Attribut gleich oder jedes Attribut voneinander verschieden ist
+;Dies bedeutet das die listen von AttributelistsWithoutDuplicates entweder länge 1 oder länge 3 haben.
+;Mittels andmap wird auf alle vier Attribute überprüft und es ist nur #t wenn alle 4 #t sind.
+(define (check-if-set xs)
+  (andmap (lambda (x) (or (= (length x) 1) (= (length x) 3))) xs))
+
+
+;Die Funktion die aus unserer Spielkarten-liste *spielkarten* n - Karten zieht
+;In jedem Schritt Wählt es einen zufälligen index und nimmt die Karte dieses index mit in seine Liste auf und entfernt sie aus dem deck aller verbleibenden Karten.
+(define (draw-n-cards n deck)
+  (let* ([decksize (length deck)]
+         [index (random decksize)])
+  (if (= n 1) (cons (list-ref deck index) '())
+      (cons (list-ref deck index) (draw-n-cards (- n 1) (remove (list-ref deck index) deck))))))
+
+;;Zusatzaufgabe
+; -- Ziehen Sie aus den 81 Spielkarten zufällig zwölf Karten,
+(define sample (draw-n-cards 12 *spielkarten*))
+
+; -- Zeichnen sie ein Bild der zwölf Karten
+(map show-card sample)
+
+; -- Finden sie alle möglichen SETs, die in den aktuellen zwölf Karten vorkommen und geben Sie diese aus.
+
+;Die Teilmenge der Potenzmenge von "sample", unserer Hand aus 12 zufälligen Karten, mit allen Menge der mächtigkeit 3.
+;mit anderen Worten alle möglichkeiten 3 Karten aus der Hand auszuwählen.
+(define pwrSetDerHand (combinations sample 3))
+
+;Wir Wollen nur die Kombinationen behalten welche ein SET bilden
+;dazu benutzen wir noch einmal Filter mit unserem is-a-set? prädikat
+(define moeglicheSet (filter is-a-set? pwrSetDerHand))
+
+;Das Anzeigen aller möglichen Sets geschieht durch einen geschachtelten map aufruf,
+;da moeglicheSet, sofern nicht leer, eine Liste von 3-Elementigen Listen ist.
+(map (lambda (x) (map show-card x)) moeglicheSet)
+
+
+
+
+
+
+

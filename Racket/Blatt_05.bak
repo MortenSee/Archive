@@ -1,0 +1,184 @@
+#lang racket
+(require se3-bib/butterfly-module)
+;;Blatt 05
+;Aufgabe 1.) Mendels Land
+#| Mendels-infoblock
+Dominanzverhalten:
+Musterung: Schwarze Sterne > Punkte > Streifen.
+Flügelfarbe: Blau > Grün > Gelb > Rot
+Fühlerform: Gekrümmt > Geschweift > Gerade
+Flügelform: Eliptisch > Rhombisch > Hexagonal
+---
+Analyse und Grobstruktur
+1.) Datenstruktur für Merkmale = Die Natürlichen Zahlen
+
+Wir  weisen dem Dominantesten der m Merkmale die Natürliche Zahl m-1 zu.
+Auf gleiche art und weise allen anderen Merkmalen, der Dominanzreihenfolge entsprechend, m-2 bis 0.
+Vergleich auf Dominanz erfolgt durch ">" bzw "<" und "=". Wenn ein Merkmal nicht "<" als das eigene ist muss es ">=" sein und somit
+muss es mindestens genau so dominant sein wie das eigene und wird anstelle des aktuellen verwendet.
+Man findet alle rezessiven Merkmale indem man eine liste aller kleineren natürlichen Zahlen erstellt.
+Alle dominanten Merkmale durch eine Liste der nat. Zahlen bis m-1, wenn M die anzahl der Merkmale ist.
+
+2.)Datenstruktur für Schmetterlinge = Eine Liste von Listen von Natürlichen Zahlen
+
+ Die Gesammtliste gestalten wir wie folgt:
+
+ Als erstes Element die Liste         '(Sichtbar must flüfa fülfo flfor)
+ wobei -- Sichtbar - Zum Assoziieren verwendet wird und dies als die Liste der Sichtbaren Merkmale identifiziert.
+       -- must     - Eine Zahl aus [2 1 0] (s.O.) die Das Muster festlegt.
+       -- flüfa    - Eine Zahl aus [3 2 1 0] (s.O.) die die Flügelfarbe festlegt.
+       -- fülfo    - Eine Zahl aus [2 1 0] (s.O.) die die Fühlerform festlegt.
+       -- flfor    - Eine Zahl aus [2 1 0] (s.O.) die die Flügelform festlegt.
+
+ Das zweite Element ist               '(RndRezess Rmust Rflüfa Rfülfo Rflfor)
+ Analog zu "Sichtbar", hier jedoch wird zufällig für jedes Merkmal eine Zahl ausgewählt die kleiner als die in "Sichtbar" ist.
+
+ Das dritte Element ist die Liste     '(NochDominant Dmust Dflüfa Dfülfo Dflfor)
+ wobei -- NochDominant - Zum Assoziieren verwendet wird und dies als Liste der zur "Sichtbar Dominanten Merkmale identifiziert.
+       -- alle anderen Jeweils wie in 1.) beschriebenen Listen der nat. Zahlen größer als die Zahl in "Sichtbar" sind.
+
+3.) Gliederung des Programms
+
+-- Die Funktion die der Benutzer anwendet um Schmetterlinge zu generieren.
+
+       (mendelt Schmetterling1 Schmetterling2 AnzahlDerKinder)
+
+erhält zwei Schmetterlinge und die Zahl der gewünschten Kinder und gibt am Ende das Bild aller Schmetterlinge zurück (show-butterfly).
+Dies wird erreicht indem sie folgende andere Funktionen aufruft:
+
+--Die Funktion die Einen Schmetterling erhält und die Merkmale(gespeichert als Zahlen) in die korrekten Symbole umwandelt.
+Dies wird für alle Schmetterlinge in der Liste angewendet welche von der nächsten funktion zurückgegeben wird.
+
+-- Die funktion die aus Zwei Schmetterlingen ein Kind erzeugt. (Dies passiert so oft wie AnzahlDerKinder, rekursiv)
+       (erzeugeSchmetterling Schmetterling1 Schmetterling2)
+
+erhält die Beiden Schmetterlinge deren Kind erzeugt werden soll und gibt Eine Liste welche das Kind enthält zurück.
+ Dies passiert indem man:
+ --Zufällig, für alle 4 Merkmale, eines der beiden Möglichkeiten (Entweder Vater oder Mutter) auswählt
+ --Das Dominantere in "Sichtbar" von Kind speichert.
+ --RndRezess mit dem überbliebenen Wert speichert.
+ --NochDominant erzeugt.
+
+Hierfür  benötigen wir:
+ -- Eine Funktion zur zufälligen auswahl aus einer Liste.
+ -- Eine Funktion die eine Liste der Natürlichen Zahlen zwischen "m" und "n" erzeugt.
+ -- Eine Funktion die zwei nat. Zahlen mit "<" vergleicht.
+
+Wir haben uns für nat.zahlen entschieden da man diese sehr einfach miteinander vergleichen kann und dies ideal für Dominant/rezessiv verhalten ist.
+Wir benutzen listen da es einfach ist mit Assoc auf die elemente zuzugreifen.
+|#
+
+;1.3)
+
+(define (rnd-elt myList)
+  (list-ref myList (random (length myList))))
+
+(define (WerIstDominant? x y)
+  (if (< x y) y
+              x))
+
+
+(define (WerIstRezessiv? x y)
+  (if (> x y) y
+              x))
+;;Eigentlich Contract nötig für m>n !
+(define (NatZwischen m n)
+  (if (= m n) (cons m '())
+      (cons m (NatZwischen (+ m 1) n))))
+
+(define (erzeugeSchmetterling dominant)
+  (list `(Sichtbar ,dominant)
+        `(RndRezessiv ,(erzeugeRandomRezessiv dominant))
+        `(NochDominant ,(erzeugeAlleDominanten dominant))))
+
+;erspart 4 einzelne fälle und wäre nicht rekursiv. Deswegen Map benutzt.
+(define (erzeugeRandomRezessiv dominant)
+  (map rnd-elt (map NatZwischen '(0 0 0 0) dominant)))
+
+;Die Listen enthalten alle m >= n wenn n Element von rezessiv. Sinvoll da gleich-dominante nicht zueinander rezessiv sind.
+(define (erzeugeAlleDominanten rezessiv)
+  (map NatZwischen rezessiv '(2 3 2 2)))
+
+;Wir übergeben eine aufruf von genePool mit den gewünschten Eltern.
+(define (erzeugeKind GENE)
+  (list  `(Sichtbar ,(map WerIstDominant? (car GENE) (cadr GENE)))
+         `(RndRezessiv ,(map WerIstRezessiv? (car GENE) (cadr GENE)))
+         `(NochDominant ,(erzeugeAlleDominanten
+            (map WerIstDominant? (car GENE) (cadr GENE))))))
+
+(define (mendeln Vater Mutter AnzahlDerKinder)
+  (if (= AnzahlDerKinder 0) '()
+      (cons (erzeugeKind (genePool Vater Mutter)) (mendeln Vater Mutter (- AnzahlDerKinder 1)))))
+
+ ;;Hier sind die Umrechnungsfunktionen für Zahl->Merkmal und Merkmal->Zahl
+
+(define (Musterung<->Zahl alpha)
+  (cond
+    [(equal? alpha 'star) 2]
+    [(equal? alpha 'dot) 1]
+    [(equal? alpha 'stripes) 0]
+    [(= alpha 2) 'star]
+    [(= alpha 1) 'dot]
+    [(= alpha 0) 'stripes]))
+
+(define (Flügelfarbe<->Zahl alpha)
+  (cond
+    [(equal? alpha 'blue) 3]
+    [(equal? alpha 'green) 2]
+    [(equal? alpha 'yellow) 1]
+    [(equal? alpha 'red) 0]
+    [(= alpha 3) 'blue]
+    [(= alpha 2) 'green]
+    [(= alpha 1) 'yellow]
+    [(= alpha 0) 'red]))
+
+(define (Fühlerform<->Zahl alpha)
+  (cond
+    [(equal? alpha 'curved) 2]
+    [(equal? alpha 'curly) 1]
+    [(equal? alpha 'straight) 0]
+    [(= alpha 2) 'curved]
+    [(= alpha 1) 'curly]
+    [(= alpha 0) 'straight]))
+
+(define (Flügelform<->Zahl alpha)
+  (cond
+    [(equal? alpha 'ellipse) 2]
+    [(equal? alpha 'rhomb) 1]
+    [(equal? alpha 'hexagon) 0]
+    [(= alpha 2) 'ellipse]
+    [(= alpha 1) 'rhomb]
+    [(= alpha 0) 'hexagon]))
+
+(define (show-all ListOfButterflies)
+  (if (= 1 (length ListOfButterflies))
+      (show-butterfly
+       (car (displayBereitMachen (car ListOfButterflies)))
+       (cadr (displayBereitMachen (car ListOfButterflies)))
+       (caddr (displayBereitMachen (car ListOfButterflies)))
+       (cadddr (displayBereitMachen (car ListOfButterflies))))
+      (show-all (cdr ListOfButterflies))))
+
+  (define (displayBereitMachen Schmetterling)
+    (list             (Musterung<->Zahl (car (cadr (assoc 'Sichtbar Schmetterling))))
+                      (Flügelfarbe<->Zahl (cadadr (assoc 'Sichtbar Schmetterling)))
+                      (Fühlerform<->Zahl (car (cdr (cdr (cadr (assoc 'Sichtbar Schmetterling))))))
+                      (Flügelform<->Zahl (car (cdr (cdr (cdr (cadr (assoc 'Sichtbar Schmetterling)))))))))
+
+
+;Erzeugt die Menge der Möglichen Gene des Kindes indem es zufällig, elementweise, die Liste der Gene der Eltern durchgeht und nach
+;dem Verfahren des Blattes passende Gene aussucht.
+(define (genePool Vater Mutter)
+  (list
+              (mixLists (cadr (assoc 'Sichtbar Vater)) (cadr (assoc 'RndRezessiv Vater)))
+              (mixLists (cadr (assoc 'Sichtbar Mutter)) (cadr (assoc 'RndRezessiv Mutter)))))
+
+
+  ;returned Liste mit 4 zahlen aus Zweil Listen von 4 Zahlen. Es sind also IMMER 4 fälle folglich lohnt sich rekursion nicht
+(define (mixLists Liste1 Liste2)
+  (map rnd-elt (map list Liste1 Liste2)))
+
+;Aufgabe 2.)
+
+
+;Aufgabe 3.)

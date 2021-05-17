@@ -1,0 +1,88 @@
+#lang racket
+(require 2htdp/image 2htdp/universe racket/trace)
+#|Blatt 6
+Weihnachtskarten
+---------------
+(pulled-regular-polygon	 	side-length	 	 	 	 
+ 	 	side-count	 	 	 	 
+ 	 	pull	 	 	 	 
+ 	 	angle	 	 	 	 
+ 	 	mode	 	 	 	 
+ 	 	color)
+ Constructs a regular polygon with side-count sides where each side is curved according to the pull and angle arguments.
+ The angle argument controls the angle at which the curved version of polygon edge makes with the original edge of the polygon.
+ Larger the pull arguments mean that the angle is preserved more at each vertex.
+
+ mit 50 5 1 140 "solid" "FARBE" für coole schneeflocke
+
+(polygon vertices
+         mode
+         color)
+Constructs a polygon connecting the given vertices.
+ vertices als liste von pos mit (make-pos x y)
+
+
+Tannenbaum --
+Schrumpfende, center-aligned übereinander gestapelte, dreiecke in dunkelgrün.
+
+mit triangle, scale und irgendnem align bauen?
+
+|#
+(define canvas (empty-scene 400 300 "darkblue"))
+(define  *height* (image-height canvas))
+(define  *width* (image-width canvas))
+
+;;Aus dem Racket-tutorial -- Eine drittel einer Schneeflocke
+(define (koch-curve n)
+    (cond
+      [(zero? n) (square 1 "outline" "white")]
+      [else
+       (local [(define smaller (koch-curve (- n 1)))]
+         (beside/align "bottom"
+                       smaller
+                       (rotate 60 smaller)
+                       (rotate -60 smaller)
+                       smaller))]))
+
+;;Eine Schneeflocke besteht aus 3 korrekt angeordneten Koch-kurven.
+;Wir regulieren die Größe mit (scale ..) damit sie nicht den ganezn canvas einnimmt.
+(define snowflake (scale 1/20 (above (beside
+                         (rotate 60 (koch-curve 5))
+                         (rotate -60 (koch-curve 5)))
+                         (flip-vertical (koch-curve 5)))))
+
+;Bauen eines Schneemanns.
+
+;Der Körper besteht aus n übereinandergelagerten  Schneekugeln. Hier representiert durch weiß ausgefüllte kreise.
+;Diese können ein wenig überlappen um die größe zu stauchen.
+;somit wird rekursiv ein n-stöckiger Schnemann gebaut
+;overlay/align/offset = {Left center right} {Top center bottom} image1 x-off y-off image2
+
+(define (snowball durchmesser)
+  (if (< durchmesser 2) (error "wird kein schöner schneemann... lass das lieber sein")
+      (circle (/ durchmesser 2) "solid" "white")))
+
+(define (build-snowman größeDesErsten)
+  (rotate 180 (build-snowman-1 größeDesErsten 3)))
+
+(define (build-snowman-1 n stage)
+  (if (= 1 stage)
+      (underlay/offset (overlay/align/offset "center" "center" (eyes n) 0 (* -1/4 n) (snowball n))
+                             0 0 (rotate 84 (triangle (/ n 4) "solid" "orange")))
+      (underlay/align/offset "center" "top" (snowball n) 0 (- (* 3/4 n) 6) (build-snowman-1 (* 3/4 n) (- stage 1)))))
+
+(define (eyes n)
+  (overlay/xy (circle (* 1/8 n) "solid" "black" ) (/ n 3) 0 (circle (* 1/8 n) "solid" "black")))
+
+(define (snow-fam number größe1)
+  (if (= 1 number) (beside (build-snowman größe1) (circle 1 "outline" "darkblue"))
+      (beside
+        (snow-fam (- number 1) (* größe1 3/4))
+        (build-snowman größe1)
+         (snow-fam (- number 1) (* 3/4 größe1)))))
+(define snowman-army (snow-fam 4 60))
+;;Hier werden alle statischen Elemente dem BIld  hinzugefügt
+;;Erfolgt durch geschachtelte place-image aufrufe.
+;Wir platzieren unsere Schneeflocke zentral in der oben definierten szene "canvas". 
+(place-image snowflake (/ *width* 8) (/ *height* 6)
+             (place-image (snow-fam 4 60) (/ *width* 2) (- *height* 60) canvas))

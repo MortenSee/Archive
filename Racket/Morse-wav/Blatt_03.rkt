@@ -1,0 +1,90 @@
+#lang racket
+;;;Blatt 3
+(require se3-bib/flaggen-module)
+(require racket/trace)
+(require racket/gui/base)
+;;Aufgabe 1.)
+;Datenstruktur für die Seefunk-Buchstabiertafel
+(define *seefunk-tafel*
+  '((#\A Alpha) (#\B Bravo) (#\C Charlie) (#\D Delta)
+    (#\E Echo) (#\F Foxtrot) (#\G Golf) (#\H Hotel)
+    (#\I India) (#\J Juliet) (#\K Kilo) (#\L Lima)
+    (#\M Mike) (#\N November) (#\O Oscar) (#\P Papa)
+    (#\Q Quebec) (#\R Romeo) (#\S Sierra) (#\T Tango)
+    (#\U Uniform) (#\V Viktor) (#\W Whiskey) (#\X X-ray)
+    (#\Y Yankee) (#\Z Zulu) (#\0 Nadazero) (#\1 Unaone)
+    (#\2 Duotwo) (#\3 Terrathree) (#\4 Carrefour)
+    (#\5 Pentafive) (#\6 Soxisix) (#\7 Setteseven)
+  (#\8 Oktoeigth) (#\9 Novonine) (#\, Decimal) (#\. Stop)))
+
+(define (char->seefunk char)
+  (cadr (assoc (char-upcase char) *seefunk-tafel*)))
+
+(define (string->seefunk string)
+  (seefunkify  (string->list  string)))
+
+(define (seefunkify stringList)
+  (if (= 1 (length stringList)) (cons (char->seefunk (car stringList)) '())
+      (cons (char->seefunk (car stringList)) (seefunkify (cdr stringList)))))
+;;Aufgabe 2.)
+
+(define *flaggen-tafel*
+  '((#\A A) (#\B B) (#\C C) (#\D D)
+    (#\E E) (#\F F) (#\G G) (#\H H)
+    (#\I I) (#\J J) (#\K K) (#\L L)
+    (#\M M) (#\N N) (#\O O) (#\P P)
+    (#\Q Q) (#\R R) (#\S S) (#\T T)
+    (#\U U) (#\V V) (#\W W) (#\X X)
+    (#\Y Y) (#\Z Z) (#\0 Z0) (#\1 Z1)
+    (#\2 Z2) (#\3 Z3) (#\4 Z4)
+    (#\5 Z5) (#\6 Z6) (#\7 Z7)
+  (#\8 Z8) (#\9 Z9)))
+
+(define (char->flaggenalphabet char)
+  (eval (cadr (assoc (char-upcase char) *flaggen-tafel*))))
+
+(define (string->flaggenalphabet string)
+  (flaggenfunkify (string->list  string)))
+
+(define (flaggenfunkify stringList)
+  (if (= 1 (length stringList)) (cons (char->flaggenalphabet (car stringList)) '())
+      (cons (char->flaggenalphabet (car stringList)) (flaggenfunkify (cdr stringList)))))
+
+(define (test char)
+  (if (char-numeric? (char-upcase char)) (eval (string->symbol (string-append "Z" (string (char-upcase char)))))
+      (eval (string->symbol (string (char-upcase char))))))
+
+(define (stringTest string)
+  (map test (string->list string)))
+
+;;Aufgabe 3.)
+
+(define *morse-tafel*
+  '((#\A "Morse-A.wav") (#\B "Morse-B.wav") (#\C "Morse-C.wav") (#\D "Morse-D.wav")
+    (#\E "Morse-E.wav") (#\F "Morse-F.wav") (#\G "Morse-G.wav") (#\H "Morse-H.wav")
+    (#\I "Morse-I.wav") (#\J "Morse-J.wav") (#\K "Morse-K.wav") (#\L "Morse-L.wav")
+    (#\M "Morse-M.wav") (#\N "Morse-N.wav") (#\O "Morse-O.wav") (#\P "Morse-P.wav")
+    (#\Q "Morse-Q.wav") (#\R "Morse-R.wav") (#\S "Morse-S.wav") (#\T "Morse-T.wav")
+    (#\U "Morse-U.wav") (#\V "Morse-V.wav") (#\W "Morse-W.wav") (#\X "Morse-X.wav")
+    (#\Y "Morse-Y.wav") (#\Z "Morse-Z.wav")))
+
+
+(define (char->morsecode char)
+  (play-sound (cadr (assoc (char-upcase char) *morse-tafel*)) #f))
+
+(define (string->morsecode string)
+  (morsecodeify (string->list  string)))
+
+(define (morsecodeify stringList)
+  (if (= 1 (length stringList)) (cons (char->morsecode (car stringList)) '())
+     (cons (char->morsecode (car stringList)) (morsecodeify (cdr stringList)))))
+
+
+(define (testMor char)
+  (play-sound (string-append "Morse-" (string (char-upcase char)) ".wav") #f))
+
+(define (stringTestMor string)
+  (map testMor (string->list string)))
+
+
+

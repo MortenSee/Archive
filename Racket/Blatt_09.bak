@@ -1,0 +1,202 @@
+#lang swindle
+(require swindle/setf swindle/misc)
+;Blatt 09
+#| Aufgabe 1 -- CLOS und generische Funktionen
+
+1.1.)
+
+Definieren sie in CLOS geeignete Klassen um Literaturbeiträge darstellen zu können
+Eigenschaften:
+ -Einen eindeutigen Schlüssel
+ -Die Namen der Autorinnen und Autoren
+ -Das Erscheinungsjahr
+ -Der Titel
+
+Spezifikationen
+
+Bücher
+ -Verlag
+ -Verlagsort
+ -Buchreihe
+ -Seriennummer
+
+Sammelbände
+ -Buch
+ -Name Des Heruasgebers
+ -Seitenangaben zu den Artikeln im Buch
+
+Zeitschrift
+ -Name der Zeitschrift
+ -Nummer des Bandes
+ -Nummer des Heftes
+ -Erscheinungsmonat
+
+
+|#
+
+(defclass Literaturbeitrag ()
+  (titel :accessor get-titel
+         :initarg :titel)
+  (author :accessor get-author
+          :initarg :author)
+  (release :accessor get-release-date
+           :initarg :date)
+  (auth-key :accessor get-key
+            :initarg :key))
+
+(defclass Buch (Literaturbeitrag)
+  (verlag :accessor get-verlag
+         :initarg :verlag)
+  (verlagsort :accessor get-VerOrt
+          :initarg :verlagsO)
+  (reihe :accessor get-reihe
+           :initarg :reihe)
+  (seriennummer :accessor get-seriennummer
+            :initarg :seriennummer))
+
+
+(defclass Sammelband (Buch)
+  (herausgeber :accessor get-herausgeber
+             :initarg :herausgeber)
+  (index :accessor get-index
+         :initarg :index))
+
+(defclass Zeitschrift (Literaturbeitrag)
+  (name :accessor get-name
+        :initarg :name)
+  (band# :accessor get-band-num
+         :initarg :bandnum)
+  (heft# :accessor get-heft-num
+         :initarg :heftnum)
+  (release-mo :accessor get-release-mo
+              :initarg :rel-mo))
+
+(define Literaturbeitrag1 (make Buch
+                    :titel "Mein Leben im Loch Ness: Verfolgt als Ungeheuer"
+                    :author "Nessie"
+                    :date "1790"
+                    :key (random 100000)
+                    :verlag "Minority-Verlag"
+                    :verlagsO "Inverness"
+                    :reihe "Die besondere Biographie"
+                    :seriennummer "1"))
+(define Literaturbeitrag2 (make Sammelband
+                    :titel "Mostly harmless - Some observations concerning the third planet of the solar system"
+                    :author "Prefect F." 
+                    :date "1979"
+                    :key (random 100000)
+                    :verlag "Galactic Press"
+                    :verlagsO "Vega-System, 3rd planet"
+                    :reihe "1500 edition"
+                    :seriennummer "p. 500"
+                    :herausgeber "Adams, D."
+                    :index "The Hitchhiker’s Guide to the Galaxy, Volume 5 of 'Travel in style'"))
+(define Literaturbeitrag3 (make Zeitschrift
+                                :titel "Zeitmaschinen leicht gemacht"
+                                :author "Wells, H.G."
+                                :date "3200"
+                                :key (random 100000)
+                                :name "Heimwerkerpraxis für Anfänger"
+                                :bandnum "500"
+                                :heftnum "3"))
+#| 1.2.) Generische Funktionen und Methoden
+
+Definieren sie eine generische funktion "cite" welche
+ -Erhält Literaturbeitrag alsargument
+ -Gibt einen String mit den korrekten Zitaten aus.
+
+|#
+(defgeneric* cite ((lit Literaturbeitrag)))
+(defmethod citeLit ((beitrag Literaturbeitrag))
+  (string-append (get-author beitrag) " (" (get-release-date beitrag) "). " (get-titel beitrag) ", "))
+
+(defmethod citeBook ((buch Buch))
+  (string-append (citeLit buch) "Band "
+                 (get-seriennummer buch) " der Reihe: "
+                 (get-reihe buch) ". "
+                 (get-verlag buch) ", "
+                 (get-VerOrt buch)"."))
+
+(defmethod citeSammel ((samm Sammelband))
+  (string-append (citeLit samm) "In "
+                 (get-herausgeber samm) ", "
+                 (get-index samm)". "
+                 (get-verlag samm) ", "
+                 (get-VerOrt samm) ". "
+                 (get-reihe samm) ", "
+                 (get-seriennummer samm) "."))
+
+(defmethod citeZeit ((zeit Zeitschrift))
+  (string-append (citeLit zeit) (get-name zeit) ". " (get-band-num zeit) "(" (get-heft-num zeit) ")."))
+
+
+#| 1.3.) Ergänzungsmethoden
+Was ist eine Ergänzungsmethode?
+
+Vorteile gegenüber "super"-calls in Java?
+
+Wie könnten sie in diesem System verwendet werden?
+Wie müsste man das System umstrukturieren?
+
+|#
+
+
+;Aufgabe 2.)
+
+(defclass Speichermedium ()
+  (herausnehmbar :accessor ist-herausnehmbar
+                 :initform #f
+                 :initarg :herausnehmbar))
+
+;-----
+
+(defclass Magnetisch (Speichermedium))
+
+(defclass Optisch (Speichermedium))
+
+(defclass Semiconductor (Speichermedium))
+
+;----------
+
+(defclass HDD (Magnetisch))
+
+(defclass Diskette (Magnetisch))
+
+;----
+
+(defclass CD/DVD (Optisch))
+
+;----
+
+(defclass SSD (Semiconductor))
+
+(defclass RAM (Semiconductor))
+
+(defclass USB (Semiconductor))
+
+;---
+
+(defclass MagnetoDisk (Magnetisch Optisch))
+
+(defclass SSHD (HDD SSD))
+
+(defclass Bankkarte (Magnetisch Semiconductor))
+
+
+;---
+
+(defgeneric* get-speichertyp ((medium Speichermedium)))
+(defgeneric* get-maxLeseGsw ((medium Speichermedium)))
+(defgeneric* get-Kapazität ((medium Speichermedium)))
+(defgeneric* get-Lebenserwartung ((medium Speichermedium)))
+(defgeneric* get-Mobilitätskapazitäten ((medium Speichermedium)))
+
+(defmethod get-Mobilitätskapazitäten ((medium Speichermedium))
+  (if (ist-herausnehmbar medium) "Dieses Speichermedium ist transportable" "Dieses Speichermedium ist nicht transportabel"))
+
+
+(define testRAM (make RAM :herausnehmbar #f))
+
+
+
+

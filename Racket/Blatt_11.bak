@@ -1,0 +1,115 @@
+#lang racket
+(require se3-bib/prolog/prologInScheme)
+
+#| 1.1 Prolog
+a.)
+(pokemon? . Pikachu)
+
+b.)
+(?typ . Pflanze)
+
+c.)
+(?typ . Normal) (?name .  Mauzi)
+
+d.)
+nicht unifizierbar, ?name kann nicht an zwei verschiedene Werte gebunden werden.
+
+e.)
+wird unifiziert aber es wird keine variable gebunden
+
+f.)
+(?typ . Kampf) (?name . Ash) (?name2 . Ash)
+
+g.)
+
+----1.2
+Eine Datenbank für ein Bib. System hat folgende Relationen:
+
+(bestand ?Signatur ?Author ?Jahr ?Titel)
+
+(ausleihe ?Signatur ?Lesernummer)
+
+(vorbestellung ?Signatur ?Lesernummer)
+
+(leser ?Name ?Vorname ?Lesernummer ?Geburstjahr)
+
+
+|#
+
+(<- (bestand "P_32" "Wells, H.G." 3200 "Zeitmaschinen leicht gemacht."))
+(<- (bestand "P_50" "Nessie" 1790 "Mein Leben im Loch Ness"))
+(<- (bestand "P_30" "Prefect, F." 1979 "Mostly Harmless..."))
+
+
+(<- (ausleihe "P_30" 102))
+(<- (ausleihe "P_32" 104))
+(<- (ausleihe "P_50" 104))
+
+
+(<- (vorbestellung "P_50" 102))
+(<- (vorbestellung "P_30" 100))
+(<- (vorbestellung "P_30" 104))
+
+(<- (leser Neugierig Nena 100 1989))
+(<- (leser Linux Leo 102 1990))
+(<- (leser Luator Eva 104 1988))
+
+;1.2.1
+(?- (leser ?lastname ?firstname ?signature ?)
+     (vorbestellung "P_30" ?signature))
+;1.2.2
+(?- (leser Luator Eva ? ?birthyear))
+;1.2.3
+(?- (leser ?name  ?vorname ?num ?)
+    (bestand ?sig "Wells, H.G." ? ?)
+    (ausleihe ?sig ?num))
+;1.2.4
+(?- (leser ?name ?vorname ?num ?geburtsjahr)
+    (vorbestellung ? ?num)
+    (test (< ?geburtsjahr 1958)))
+
+ ;1.2.5
+(<- (ausleiher ?x ?y) :-
+    (leser ?x ?y ?num ?)
+    (ausleihe ?a ?num))
+(<- (mehrAlsEins ?name ?vorname) :-
+    (leser ?name ?vorname ?num ?)
+    (ausleihe ?buch ?num)
+    (ausleihe ?buch2 ?num)
+    (!= ?buch ?buch2))
+
+(<- (nurEinBuch ?x ?y) :-
+    (ausleiher ?x ?y)
+    (not mehrAlsEins ?x ?y))
+
+;--------2
+
+(require racket/trace)
+
+
+(define (harmonischeReihe n)
+  (if (zero? n) 0
+      (+ (/ 1 n) (harmonischeReihe (- n 1)))))
+
+(define (memo fn)
+  (letrec
+      ([table '()]
+       [store (lambda
+                  (arg val)
+                (set! table (cons (cons arg val) table))
+                val)]
+       [retrieve
+        (lambda (arg)
+          (let ((val-pair (assoc arg table)))
+            (if val-pair (cdr val-pair) #f)))]
+       [ensure-val
+        (lambda (x)
+          (let ([stored-val (retrieve x)])
+            (if stored-val stored-val
+                (store x (fn x)))))]) ensure-val))
+
+(define harmonisch-memo (memo harmonischeReihe))
+(set! harmonischeReihe (memo harmonischeReihe))
+
+;----------Aufgabe 3
+

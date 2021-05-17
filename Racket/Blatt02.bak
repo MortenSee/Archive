@@ -1,0 +1,63 @@
+#lang racket
+; für 2.3
+(require math/base)
+
+;;;Übungsblatt 2
+;; 1 - Symbole und Werte, Umgebungen
+;1.)
+
+;2.)
+
+;3.)
+
+;4.)
+
+;5.)
+
+;6.)
+
+;7.)
+
+;8.)
+
+;9.)
+
+;10.)
+
+;11.)
+
+;12.)
+
+;13.)
+
+;14.)
+
+;;Aufgabe 2 - Rechnen mit exakten Zahlen
+;2.1) Die Fakultät einer Zahl
+; number -> number
+(define (n! n)
+  (if (= n 1) 1 (* n (n! (- n 1)))))
+;Bsp: 1! = 1, 3! = 6 , 7! = 5040.
+(n! 1)
+(n! 3)
+(n! 7)
+;2.2) Potenzen von Rationalzahlen.
+;else eingerückt
+(define (power r n)
+  (if (= n 0) 1
+      (if (even? n) (sqr (power r (/ n 2)))
+          (* r (power r (- n 1))))))
+;2.3) Die Eulerzahl e
+(define (eSum n)
+  (if (= n 1) 1
+      (+ (/ n
+          (n! (- n 1)))
+         (eSum (- n 1)) )))
+(define (eEstimate n)
+  (/ (eSum n) 2))
+;;Noch rechnen bis  e - eEstimate < 1/ 10^1000
+
+(define (eErrMargin margin)
+  (let ([n 1])
+    (while? (< margin (- euler.0 (gibE n)))
+          (set! [n (+ n 1)]) )))

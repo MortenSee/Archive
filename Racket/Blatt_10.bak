@@ -1,0 +1,97 @@
+#lang racket
+
+#|
+
+|#
+(define *spielfeld* #(0 0 0 0 0 9 0 7 0
+                      0 0 0 0 8 2 0 5 0
+                      3 2 7 0 0 0 0 4 0
+                      0 1 6 0 4 0 0 0 0
+                      0 5 0 0 0 0 3 0 0
+                      0 0 0 0 9 0 7 0 0
+                      0 0 0 6 0 0 0 0 5
+                      8 0 2 0 0 0 0 0 0
+                      0 0 4 2 0 0 0 0 8))
+
+(define *test*      #(1 2 3 1 2 3 1 2 3
+                      4 5 6 4 5 6 4 5 6
+                      7 8 9 7 8 9 7 8 9
+                      1 2 3 1 2 3 1 2 3
+                      4 5 6 4 5 6 4 5 6
+                      7 8 9 7 8 9 7 8 9
+                      1 2 3 1 2 3 1 2 3
+                      4 5 6 4 5 6 4 5 6
+                      7 8 9 7 8 9 7 8 9))
+
+;Eine Umgekehrte Version des modulo
+;Alle 9 einträge fängt eine neue Spalte an.
+(define (xy->id x y)
+  (+ x (* y 9)))
+
+;Die Indizes der Zeile sind die 0-8 + 9 * die Zeilenzahl
+(define (row->id y)
+  (build-list 9 (lambda (x) (+ x (* y 9)))))
+
+;Die Spalten-indizes sind die Indizes der ersten spalte + 1 * die Spaltenzahl.
+(define (col->id x)
+  (map + '(0 9 18 27 36 45 54 63 72) (make-list 9 (* x 1))))
+
+;Eine hilfsliste für die berechnung der indizes der quadranten
+(define helper '(0 3 6 27 30 33 54 57 60))
+
+;Die koordinaten des 0-ten quadranten werden als basis genommen. Zu ihnen addieren wir den nötigen offset, welcher in helper steht.
+(define (quad->id q)
+  (map + '(0 1 2 9 10 11 18 19 20) (make-list 9 (list-ref helper q))))
+
+(define (get-id-val state xs)
+  (if (null? xs) '()
+      (cons (vector-ref state (first xs)) (get-id-val state (cdr xs)))))
+
+(define funcs  '(row->id col->id quad->id))
+(define 0bis8 (range 9))
+
+;Entfernt jede 0 aus einer Liste.
+(define (remove-0s xs)
+  (filter-not zero? xs))
+
+;Überpüft ob die Reihe/Zeile/Quadrant konsistent ist
+;game    -- Ein Spielfeld-Vector
+;id-func -- Eine der Indize Funktionen zu Reihe/Zeile/Quader
+;id      -- Die Reihe/Zeile/Quader der Überpfüft werden soll
+(define (konsistent? game id-func id)
+  (if (boolean? (check-duplicates (remove-0s (get-id-val game ((eval id-func) id))))) #t
+      #f))
+
+;Überprüft ob alle möglichkeiten der Reihe/Zeile/Quader konsistent sind
+;game    -- Spielfeld-Vector
+;id-func -- Eine der Indize-Funktionen zu Reihe/Zeile/Quader
+(define (ID-consistency game id-func)
+  (map (curry (curry konsistent? game) id-func) 0bis8))
+
+;Überprüft ob alle möglichen Reihen, Zeilen und Quader konsistent sind.
+;game -- Ein Spielfeld-Vector
+(define (all-ID-consistency game)
+  (map (curry ID-consistency game) funcs))
+
+;Ein Spielzustand ist konsistent wenn alle Reihen UND alle Zeilen UND alle Quader konsistent sind
+;Das heißt das in (all-ID-consistency spiel) nur #t steht.
+(define (spiel-konsistent? spiel)
+  (foldl (lambda (x result)(and x result)) #t (flatten (all-ID-consistency spiel))))
+
+;Ein Spiel ist gelößt  <=>  (kein Feld ist 0) UND (spiel-konsistenz? spiel) => #t
+(define (spiel-geloest? game)
+  (if (and (= (vector-count zero? game) 0)
+           (spiel-konsistent? game))       #t
+                                           #f))
+
+; Für  jede Zelle des Vectors  : Wenn Die Zelle 0 ist : Wenn Reihe, Zeile und der Quader n enthählt -> Zelle wird 'X
+(define (annotiere-spielfeld game copy start n)
+  (let ([cell-value (vector-ref copy start)])
+    (if (= start 81) '() ;Wir haben fertig annotiert und müssen nichts mehr machen
+        (if (= cell-value 0) (vector-set! game (compute-if-X start n))
+             (annotiere-spielfeld game copy (+ start 1) n)))))
+
+; floor(x/9) => reihe | (x mod 9) => Spalte 
+(define (compute-if-X index n)
+  (5))
+

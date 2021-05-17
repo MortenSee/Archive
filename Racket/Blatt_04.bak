@@ -1,0 +1,100 @@
+#lang racket
+(require "Blatt_03.rkt")
+(require racket/promise)
+;;Blatt 4
+;;Aufgabe 1.)
+;
+(eq? (list 'Rudolph  'the 'rednosed 'reindeer ) (cons 'Rudolph '(the 'rednosed 'reindeer)))
+
+
+;;Aufgbabe 2
+#| Blockkommentar für Grammatik
+<Notruf> = <Überschrift> <Standortangabe> <Art Des Notfalls> <Weitere Details> -- <Unterschrift> OVER
+<Überschrift> = <Überschrift1> <Überschrift2> <Überschrift3> <Überschrift4> <Überschrift5>
+<Überschrift1> = MAYDAY MAYDAY MAYDAY
+<Überschrift2> = HIER IST | DELTA ECHO
+<Überschrift3> = NAME NAME NAME <RufzeichenBuchstabiert>
+<Überschrift4> = MAYDAY NAME <NameBuchstabiert>
+<Überschrift5> = <RufzeichenBuchstabiert>
+<Standortangabe> = (NOTFALLPOSITION IST | WIR SIND ) <Position>
+<Unterschrift> = NAME <RufzeichenBuchstabiert>
+|#
+(define (rnd-elt list)
+  (list-ref list (random (length list))))
+
+
+(define (Notruf NAME KENNUNG POSITION ART-UND-DETAILS)
+  (display
+   (string-upcase
+    (string-append
+     (Überschrift NAME KENNUNG) (Standortangabe POSITION) ART-UND-DETAILS  "-- \n" (Unterschrift NAME KENNUNG) "\n OVER"))))
+
+(define (Überschrift NAME KENNUNG)
+  (string-append Überschrift1 "\n" Überschrift2 "\n" (Überschrift3 NAME KENNUNG) "\n" (Überschrift4 NAME) "\n" (Überschrift5 KENNUNG) "\n"))
+
+(define Überschrift1 "MAYDAY MAYDAY MAYDAY")
+
+(define Überschrift2 (rnd-elt '("HIER IST" "DELTA ECHO")))
+
+(define (Überschrift3 NAME KENNUNG) (string-append NAME " " NAME " " NAME " " (string->seefunkString KENNUNG)))
+
+(define (Überschrift4 NAME) (string-append "MAYDAY " NAME " ICH BUCHSTABIERE " (string->seefunkString NAME)))
+
+(define (Überschrift5 KENNUNG) (string-append "RUFZEICHEN "(string->seefunkString  KENNUNG)))
+
+(define (Standortangabe POSITION) (string-append (rnd-elt '("NOTFALLPOSITION IST " "WIR SIND ")) POSITION "\n"))
+
+(define (Unterschrift NAME KENNUNG) (string-append NAME " " (string->seefunkString KENNUNG)))
+;Bsp:
+#|
+(Notruf "Unicorn"
+        "UCRN"
+        "Ungefähr 5sm nordwestlich Leuchtturm Roter Sand"
+        "Schwere Schlagseite, Wir Sinken, Keine Verletzten, 6 Man gehen in die Rettungsinsel, Schnelle Hilfe Erforderlich")
+(Notruf "Nautilus"
+        "DEYJ"
+        "Ungefähr 10 sm östlich point Nemo 48° 52' 31,75'' S , 123° 23' 33,07'' W"
+        "Eine Riesenkrake hat das Schiff umschlungen, ein Leck im Rumpf, 20 Leute an Board. Treiben antriebslos an der Wasseroberfläche")
+(Notruf "Maltese Falcon"
+        "HUQ9"
+        "N 54° 34' 5,87'' , E 8° 27' 33,41''"
+        "Auf eine Sandbank aufgelaufen, 10 Mann an Board, Schiff ist 88 Meter Lang mit Schwarzem Rumpf, Unfallzeit 0730 UTC")
+|#
+
+;;Aufgabe 3.)
+#|
+3.1)
+  Innere Reduktion
+>(hoch3 (+ 3 (hoch3 3)))
+>(hoch3 (+ 3 27))
+>(hoch3 30)
+>27000
+
+  Äußere Reduktion
+>(hoch3 (+ 3 (hoch3 3)))
+>(* (+ 3 (hoch3 3)) (+ 3 (hoch3 3)) (+ 3 (hoch3 3)))
+>(* (+ 3 27) (+ 3 27) (+ 3 27))
+>(* 30 30 30)
+>27000
+
+3.2)
+
+In Racket werden funktionen per Innerer Reduktion ausgewertet, special-form-expressions allerdings mit äußerer Reduktion.
+
+3.3)
+(define (new-if condition? then-clause else-clause)
+                 (cond
+                     (condition? then-clause )
+                     (elsel else-clause)))
+
+(define (faculty product counter max-count)
+  (new-if (> counter max-count) product
+          (faculty (* counter product) (+ counter 1) max-count)))
+
+(faculty 1 1 5)
+>(new-if (> 1 5) 1 (faculty 1 2 5))
+>(new-if (> 1 5) 1 (new-if (> 2 5) 1 (faculty 2 3 5))
+>(new-if (> 1 5) 1 (new-if (> 2 5) 1 (new-if (> 3 5) 1 (faculty 3 4 5))
+>(new-if (> 1 5) 1 (new-if (> 2 5) 1 (new-if (> 3 5) 1 (new-if (> 3 5) 1 (faculty 4 5 5))
+...usw
+|#
